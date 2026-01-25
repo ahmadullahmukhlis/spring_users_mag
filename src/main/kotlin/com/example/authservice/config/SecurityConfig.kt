@@ -2,37 +2,78 @@ package com.example.authservice.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val jwtFilter: JwtFilter // ✅ Use injected bean, not the class
+    private val jwtFilter: JwtFilter
 ) {
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf { it.disable() } // Disable CSRF for APIs
+            // ✅ ENABLE CORS
+            .cors { }
+
+            // ✅ DISABLE CSRF (API)
+            .csrf { it.disable() }
+
+            // ✅ NO SESSION (JWT)
+            .sessionManagement {
+                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            }
+
+            // ✅ AUTH RULES
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                    .requestMatchers("/error").permitAll()
-                    .requestMatchers("/auth/**").permitAll()
-                    .requestMatchers("/api/auth/**").permitAll()
+                    // ✅ allow preflight
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                    // ✅ public endpoints
+                    .requestMatchers(
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html",
+                        "/error",
+                        "/auth/**",
+                        "/api/auth/**"
+                    ).permitAll()
+
+                    // ✅ everything else secured
                     .anyRequest().authenticated()
             }
+
+            // ✅ DISABLE DEFAULT LOGIN
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
 
-        // ✅ Correct: use the injected instance
+        // ✅ JWT FILTER
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
+    }
+
+    // ✅ CORS CONFIGURATION
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val config = CorsConfiguration()
+
+        config.allowedOrigins = listOf("http://localhost:4200") // Angular
+        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        config.allowedHeaders = listOf("*")
+        config.allowCredentials = true
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return source
     }
 }
