@@ -58,8 +58,8 @@ class UserService(
 
         val user = UserEntity(
             username = request.username,
-            FirstName = request.firstName,
-            LastName = request.lastName,
+            firstName = request.firstName,
+            lastName = request.lastName,
             email = request.email,
             password = passwordEncoder.encode(request.password)!!,
             enabled = true,
@@ -79,8 +79,8 @@ class UserService(
 
         user.username = request.username
         user.email = request.email
-        user.FirstName = request.firstName
-        user.LastName = request.lastName
+        user.firstName = request.firstName
+        user.lastName = request.lastName
 
         if (!request.password.isNullOrBlank()) {
             user.password = passwordEncoder.encode(request.password)!!

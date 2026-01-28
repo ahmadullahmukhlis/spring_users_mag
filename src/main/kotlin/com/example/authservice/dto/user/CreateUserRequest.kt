@@ -11,7 +11,7 @@ data class CreateUserRequest(
     val username: String,
 
     @field:NotBlank(message = "first name is required")
-    val firstName: String,
+    val firstName: String?,
 
     @field:NotBlank(message = "last name is required")
     val lastName: String,
